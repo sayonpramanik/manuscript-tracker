@@ -1,4 +1,5 @@
 import type { Manuscript } from "./types";
+import { normalizeManuscript } from "./project";
 
 export const STORAGE_KEY = "manuscript-tracker:v1";
 
@@ -8,7 +9,7 @@ export function loadManuscripts(fallback: Manuscript[]): Manuscript[] {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return fallback;
     const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : fallback;
+    return Array.isArray(parsed) ? parsed.map(normalizeManuscript) : fallback;
   } catch {
     return fallback;
   }

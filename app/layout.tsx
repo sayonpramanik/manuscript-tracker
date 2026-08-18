@@ -10,8 +10,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Manuscript Tracker",
-  description: "A calm, author-centred workflow from first idea to publication.",
+  title: "R-MANTRA — Publication project management for researchers",
+  description: "A free, local-first and extensible workspace for moving research from first idea to compliant publication.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calculatePortfolioHealth, daysUntil, scoreRelevance } from "./insights";
 import type { Manuscript } from "./types";
+import { createProjectFields } from "./project";
 
 const base: Manuscript = {
   id: "one",
@@ -14,6 +15,7 @@ const base: Manuscript = {
   coauthors: [],
   updatedAt: "2026-08-17T12:00:00Z",
   notes: "",
+  ...createProjectFields("one", "Paper"),
 };
 
 describe("portfolio insights", () => {
