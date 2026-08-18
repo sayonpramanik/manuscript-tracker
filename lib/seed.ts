@@ -1,4 +1,5 @@
 import type { Manuscript, RadarItem } from "./types";
+import { createProjectFields } from "./project";
 
 const now = new Date();
 const isoOffset = (days: number) => {
@@ -20,6 +21,7 @@ export const seedManuscripts: Manuscript[] = [
     coauthors: ["Co-author A"],
     updatedAt: new Date().toISOString(),
     notes: "Demo record — edit or remove it to begin your own portfolio.",
+    ...createProjectFields("demo-spatial-intelligibility", "Spatial intelligibility", ["Co-author A"]),
   },
   {
     id: "demo-spatial-culture",
@@ -33,6 +35,7 @@ export const seedManuscripts: Manuscript[] = [
     coauthors: ["Co-author B", "Co-author C"],
     updatedAt: new Date().toISOString(),
     notes: "Demo record.",
+    ...createProjectFields("demo-spatial-culture", "Spatial culture", ["Co-author B", "Co-author C"]),
   },
   {
     id: "demo-geoai",
@@ -46,6 +49,7 @@ export const seedManuscripts: Manuscript[] = [
     coauthors: [],
     updatedAt: new Date().toISOString(),
     notes: "Demo record.",
+    ...createProjectFields("demo-geoai", "GeoAI methods"),
   },
 ];
 

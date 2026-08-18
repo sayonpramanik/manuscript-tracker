@@ -1,0 +1,10 @@
+{
+  "scope": "R-MANTRA publication project core",
+  "checks": [
+    { "name": "lint", "command": "npm run lint", "status": "passed" },
+    { "name": "typecheck", "command": "npm run typecheck", "status": "passed" },
+    { "name": "unit", "command": "npm run test", "status": "passed", "result": "9 tests across 4 files" },
+    { "name": "production-build", "command": "npm run build", "status": "passed" },
+    { "name": "ui-smoke", "command": "browser smoke test", "status": "passed", "result": "project board, task creation, 9 compliance checks, add-on catalogue and console errors verified" }
+  ]
+}

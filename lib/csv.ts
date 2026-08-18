@@ -1,5 +1,6 @@
 import type { Manuscript, Stage } from "./types";
 import { STAGES } from "./types";
+import { createProjectFields } from "./project";
 
 const HEADERS = [
   "id",
@@ -65,8 +66,9 @@ export function fromCsv(csv: string): Manuscript[] {
   return rows.map((row, index) => {
     const record = Object.fromEntries(headers.map((header, cell) => [header, row[cell] ?? ""]));
     const stage = STAGES.includes(record.stage as Stage) ? (record.stage as Stage) : "Idea";
+    const id = record.id || `imported-${Date.now()}-${index}`;
     return {
-      id: record.id || `imported-${Date.now()}-${index}`,
+      id,
       title: record.title,
       shortTitle: record.shortTitle || record.title.slice(0, 42),
       stage,
@@ -78,6 +80,7 @@ export function fromCsv(csv: string): Manuscript[] {
       updatedAt: record.updatedAt || new Date().toISOString(),
       notes: record.notes || "",
       doi: record.doi || undefined,
+      ...createProjectFields(id, record.shortTitle || record.title, record.coauthors ? record.coauthors.split(" | ").filter(Boolean) : []),
     };
   });
 }

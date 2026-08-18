@@ -1,8 +1,8 @@
 {
-  "name": "manuscript-tracker",
-  "version": "0.1.0",
+  "name": "r-mantra",
+  "version": "0.2.0",
   "private": true,
-  "description": "An author-centred, local-first manuscript workflow and research radar.",
+  "description": "Extensible, local-first publication project management for researchers.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

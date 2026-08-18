@@ -2,12 +2,17 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { fromCsv, toCsv } from "@/lib/csv";
+import { fromWorkspaceJson, toWorkspaceJson } from "@/lib/backup";
 import { calculatePortfolioHealth, daysUntil } from "@/lib/insights";
+import { createProjectFields } from "@/lib/project";
 import { seedManuscripts, seedRadar } from "@/lib/seed";
 import { loadManuscripts, saveManuscripts } from "@/lib/storage";
 import { STAGES, type Manuscript, type RadarItem, type Stage } from "@/lib/types";
+import ProjectBoard from "./ProjectBoard";
+import ComplianceWorkspace from "./ComplianceWorkspace";
+import AddonMarketplace from "./AddonMarketplace";
 
-type View = "portfolio" | "pipeline" | "radar";
+type View = "portfolio" | "pipeline" | "projects" | "compliance" | "radar" | "addons";
 type Notice = { type: "success" | "error"; message: string } | null;
 
 const stageTone: Record<Stage, string> = {
@@ -21,11 +26,14 @@ const stageTone: Record<Stage, string> = {
   Published: "forest",
 };
 
-function Icon({ name }: { name: "grid" | "flow" | "radar" | "plus" | "download" | "settings" | "arrow" }) {
+function Icon({ name }: { name: "grid" | "flow" | "project" | "check" | "radar" | "addons" | "plus" | "download" | "settings" | "arrow" }) {
   const paths = {
     grid: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
     flow: <><path d="M6 3v12"/><circle cx="6" cy="18" r="3"/><path d="M18 21V9"/><circle cx="18" cy="6" r="3"/><path d="M9 6h6M9 18h6"/></>,
+    project: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4m8-4v4M7 10h4m2 0h4M7 14h3m3 0h4"/></>,
+    check: <><path d="M9 11.5 11 14l4.5-5"/><path d="M12 3 4.5 6v5.5c0 4.3 2.9 7.5 7.5 9.5 4.6-2 7.5-5.2 7.5-9.5V6Z"/></>,
     radar: <><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="m12 12 6-6"/><circle cx="12" cy="12" r="1"/></>,
+    addons: <><path d="M8 3h8v5h5v8h-5v5H8v-5H3V8h5Z"/><path d="M8 8h8v8H8Z"/></>,
     plus: <><path d="M12 5v14M5 12h14"/></>,
     download: <><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 18v2h16v-2"/></>,
     settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,
@@ -46,6 +54,7 @@ const emptyDraft = (): Manuscript => ({
   coauthors: [],
   updatedAt: new Date().toISOString(),
   notes: "",
+  ...createProjectFields("new", "New manuscript"),
 });
 
 export default function ManuscriptWorkbench() {
@@ -99,12 +108,15 @@ export default function ManuscriptWorkbench() {
   function createManuscript(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!draft.title.trim()) return;
+    const id = crypto.randomUUID();
+    const title = draft.title.trim();
     const item = {
       ...draft,
-      id: crypto.randomUUID(),
-      title: draft.title.trim(),
-      shortTitle: draft.shortTitle.trim() || draft.title.trim().slice(0, 42),
+      id,
+      title,
+      shortTitle: draft.shortTitle.trim() || title.slice(0, 42),
       updatedAt: new Date().toISOString(),
+      ...createProjectFields(id, draft.shortTitle.trim() || title.slice(0, 42), draft.coauthors),
     };
     setManuscripts((items) => [item, ...items]);
     setSelectedId(item.id);
@@ -123,16 +135,22 @@ export default function ManuscriptWorkbench() {
     URL.revokeObjectURL(url);
   }
 
+  function exportWorkspace() {
+    download("r-mantra-workspace.json", toWorkspaceJson(manuscripts), "application/json;charset=utf-8");
+    setNotice({ type: "success", message: "Full R-MANTRA workspace backup downloaded." });
+  }
+
   function exportCsv() {
-    download("manuscripts.csv", toCsv(manuscripts), "text/csv;charset=utf-8");
-    setNotice({ type: "success", message: "Portable CSV backup downloaded." });
+    download("r-mantra-portfolio.csv", toCsv(manuscripts), "text/csv;charset=utf-8");
+    setNotice({ type: "success", message: "Portfolio CSV downloaded. Use Backup for tasks, comments and compliance records." });
   }
 
   async function importCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const imported = fromCsv(await file.text());
+      const content = await file.text();
+      const imported = file.name.toLowerCase().endsWith(".json") ? fromWorkspaceJson(content) : fromCsv(content);
       setManuscripts(imported);
       if (imported[0]) setSelectedId(imported[0].id);
       setNotice({ type: "success", message: `${imported.length} manuscripts imported.` });
@@ -184,13 +202,16 @@ export default function ManuscriptWorkbench() {
     <main className="app-shell">
       <aside className="sidebar">
         <div className="brand-mark" aria-label="Manuscript Tracker home">
-          <span>MT</span>
-          <div><strong>Manuscript</strong><small>TRACKER</small></div>
+          <span>RM</span>
+          <div><strong>R‑MANTRA</strong><small>PUBLICATION PROJECTS</small></div>
         </div>
         <nav aria-label="Primary navigation">
           <button className={view === "portfolio" ? "active" : ""} onClick={() => setView("portfolio")}><Icon name="grid"/><span>Portfolio</span></button>
           <button className={view === "pipeline" ? "active" : ""} onClick={() => setView("pipeline")}><Icon name="flow"/><span>Pipeline</span></button>
+          <button className={view === "projects" ? "active" : ""} onClick={() => setView("projects")}><Icon name="project"/><span>Projects</span></button>
+          <button className={view === "compliance" ? "active" : ""} onClick={() => setView("compliance")}><Icon name="check"/><span>Compliance</span></button>
           <button className={view === "radar" ? "active" : ""} onClick={() => setView("radar")}><Icon name="radar"/><span>Research Radar</span><em>{radar.length}</em></button>
+          <button className={view === "addons" ? "active" : ""} onClick={() => setView("addons")}><Icon name="addons"/><span>Add-ons</span></button>
         </nav>
         <div className="sidebar-spacer" />
         <div className="privacy-note"><span>●</span><div><strong>Local-first</strong><small>Your portfolio stays in this browser until you export or sync it.</small></div></div>
@@ -199,14 +220,15 @@ export default function ManuscriptWorkbench() {
 
       <section className="workspace">
         <header className="topbar">
-          <div className="mobile-brand">MT</div>
+          <div className="mobile-brand">RM</div>
           <label className="search-box">
             <span>⌕</span>
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search manuscripts, journals or keywords" />
           </label>
-          <input ref={importRef} className="visually-hidden" type="file" accept=".csv,text/csv" onChange={importCsv} />
+          <input ref={importRef} className="visually-hidden" type="file" accept=".csv,.json,text/csv,application/json" onChange={importCsv} />
           <button className="quiet-button" onClick={() => importRef.current?.click()}>Import</button>
-          <button className="quiet-button" onClick={exportCsv}><Icon name="download"/> Export</button>
+          <button className="quiet-button" onClick={exportCsv}>CSV</button>
+          <button className="quiet-button" onClick={exportWorkspace}><Icon name="download"/> Backup</button>
           <button className="primary-button" onClick={() => setShowCreate(true)}><Icon name="plus"/> New manuscript</button>
         </header>
 
@@ -270,6 +292,10 @@ export default function ManuscriptWorkbench() {
           </div>
         )}
 
+        {view === "projects" && <ProjectBoard manuscripts={manuscripts} selectedId={selectedId} onSelect={setSelectedId} onUpdate={updateManuscript} />}
+
+        {view === "compliance" && <ComplianceWorkspace manuscripts={manuscripts} selectedId={selectedId} onSelect={setSelectedId} onUpdate={updateManuscript} />}
+
         {view === "radar" && (
           <div className="content radar-page">
             <div className="page-heading"><div><p className="eyebrow">DISCOVERY, NOT DECISION</p><h1>Research Radar</h1><p>Recent publications and preprints matching the language of your portfolio.</p></div><button className="primary-button" onClick={refreshRadar} disabled={isRefreshing}><Icon name="radar"/>{isRefreshing ? "Searching…" : "Refresh from OpenAlex"}</button></div>
@@ -283,6 +309,8 @@ export default function ManuscriptWorkbench() {
             </section>
           </div>
         )}
+
+        {view === "addons" && <AddonMarketplace selected={selected} onUpdate={updateManuscript} />}
       </section>
 
       {showCreate && <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowCreate(false)}>

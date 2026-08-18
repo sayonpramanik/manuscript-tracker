@@ -1,0 +1,9 @@
+R-MANTRA v0.2 implementation verified locally.
+
+- Data model and backward-compatible storage migration added.
+- Project Kanban, assignments, milestones, contributors and threaded comments added.
+- Local source-backed compliance preflight added.
+- Permission-labelled add-on catalogue and full workspace backups added.
+- Free-tier and commercialisation model documented.
+- Lint, TypeScript, 9 unit tests and the production build pass.
+- Browser smoke test passed for task creation, compliance findings, free-tier messaging and add-on state labels; no browser console errors were observed.

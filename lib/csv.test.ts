@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fromCsv, toCsv } from "./csv";
 import type { Manuscript } from "./types";
+import { createProjectFields } from "./project";
 
 describe("CSV portability", () => {
   it("round-trips commas, quotes and arrays", () => {
@@ -16,6 +17,7 @@ describe("CSV portability", () => {
       coauthors: ["Author One", "Author Two"],
       updatedAt: "2026-08-18T10:00:00Z",
       notes: "Portable record",
+      ...createProjectFields("paper-1", "Maps and movement", ["Author One", "Author Two"]),
     };
 
     const [result] = fromCsv(toCsv([manuscript]));
