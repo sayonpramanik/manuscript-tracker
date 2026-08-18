@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose an improvement to an author's manuscript workflow.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: author-need
+    attributes:
+      label: Author need
+      description: What difficulty in a real manuscript workflow would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Data and privacy implications
+      description: Describe any new service, credential, stored field or external data flow.
